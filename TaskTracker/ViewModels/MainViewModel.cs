@@ -20,7 +20,7 @@ namespace TaskTracker.ViewModels
         private ObservableCollection<UserTask> _inProgressTasks;
         private ObservableCollection<UserTask> _doneTasks;
 
-        public event EventHandler DataChanged;
+        public event Action DataChanged;
 
         public MainViewModel()
         {
@@ -48,6 +48,7 @@ namespace TaskTracker.ViewModels
                     _todoTasks.Clear();
                     _inProgressTasks.Clear();
                     _doneTasks.Clear();
+                    DataChanged?.Invoke();
                     return;
                 }
 
@@ -60,21 +61,14 @@ namespace TaskTracker.ViewModels
                 OnPropertyChanged(nameof(TodoTasks));
                 OnPropertyChanged(nameof(InProgressTasks));
                 OnPropertyChanged(nameof(DoneTasks));
-            });
-        }
 
-        public void MoveTaskToStatus(UserTask task, TaskState newStatus)
-        {
-            if (task == null || SelectedSprint == null) return;
-            _dbService.UpdateTaskStatus(task.Id, newStatus);
-            UpdateKanban();
-            DataChanged?.Invoke(this, EventArgs.Empty);
+                DataChanged?.Invoke();
+            });
         }
 
         public void ForceUpdate()
         {
             UpdateKanban();
-            DataChanged?.Invoke(this, EventArgs.Empty);
         }
 
         private void UpdateCollection(ObservableCollection<UserTask> collection, IEnumerable<UserTask> newItems)
@@ -92,7 +86,12 @@ namespace TaskTracker.ViewModels
         public Sprint SelectedSprint
         {
             get => _selectedSprint;
-            set { _selectedSprint = value; OnPropertyChanged(); UpdateKanban(); DataChanged?.Invoke(this, EventArgs.Empty); }
+            set
+            {
+                _selectedSprint = value;
+                OnPropertyChanged();
+                ForceUpdate();
+            }
         }
 
         public ObservableCollection<UserTask> TodoTasks
